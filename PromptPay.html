@@ -1,0 +1,1244 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PromptPay QR & Recorder</title>
+    <style>
+        body { background-color: #ffffff; color: #000000; font-family: -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 40px 0 50px 0; }
+        .container { background: #ffffff; padding: 20px 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.05); text-align: center; max-width: 550px; width: 95%; display: flex; flex-direction: column; margin-bottom: 20px; }
+        
+        .qr-section { 
+            background: #ffffff; padding: 10px; margin-bottom: 15px; 
+            display: flex; flex-direction: column; align-items: center; 
+            min-height: 450px;
+        }
+
+        /* Layout Helpers */
+        .flex-row { display: flex; gap: 15px; justify-content: center; width: 100%; margin-bottom: 15px; align-items: stretch; }
+        .form-header { display: flex; justify-content: flex-end; width: 100%; margin-bottom: 10px; padding-right: 5px; }
+        
+        /* Button Styles */
+        .btn-small-outline {
+            background: #ffffff; border: 1px solid #ccc; border-radius: 12px; padding: 8px 15px;
+            font-size: 14px; color: #555; cursor: pointer; font-weight: bold; flex: 1; 
+        }
+        .btn-small-outline.active { background: #ffebee; border-color: #d32f2f; color: #d32f2f; }
+        .btn-theme-fit { flex: 0 0 auto; width: auto; min-width: 80px; }
+
+        .btn-square-lg {
+            border-radius: 15px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 50%;
+            height: 110px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            line-height: 1.2;
+            padding: 10px;
+            border: 2px solid #ccc;
+        }
+
+        .btn-show-qr {
+            background: #DBDBFC; color: #000000; border: 2px solid #000000;
+            font-size: 25px;
+        }
+
+        .action-btn { 
+            background: #011840; color: #ffffff; border: 2px solid #011840; 
+            font-size: 30px;
+        }
+
+        .btn-menu-lg {
+            background: #ffffff; border: 2px solid #ccc; color: #000000;
+            font-size: 25px;
+        }
+
+        .form-section { border: 2px solid #000000; border-radius: 15px; padding: 25px; margin-top: 0; display: flex; flex-direction: column; gap: 20px; }
+        
+        .rotated-container {
+            width: 100%; transform: rotate(180deg); background-color: #C5F3E3;
+            padding: 15px 0; border-radius: 8px; margin-bottom: 15px;
+            display: flex; flex-direction: column; justify-content: center;
+        }
+        .rotated-text-line { width: 100%; text-align: center; line-height: 1.2; color: #000000; margin-bottom: 5px; }
+        #rotatedNameDisplay { font-weight: normal; }
+        #rotatedAmountDisplay { font-weight: bold; margin-bottom: 0; }
+        
+        .bottom-section {
+            width: 100%; background-color: #FFF9E8; padding: 15px 0; margin-top: 10px; border-radius: 8px; 
+        }
+        #amountDisplay { font-weight: bold; margin-bottom: 5px; }
+        #accountNameDisplay { font-weight: normal; margin-top: 5px; } 
+        
+        #qrcode { display: flex; justify-content: center; align-items: center; margin-bottom: 15px; margin-top: 10px; }
+        .input-group { text-align: center; margin: 0; }
+        
+        .amount-label { display: block; margin-bottom: 10px; font-size: 30px; color: #000000; font-weight: bold; }
+        label { display: block; margin-bottom: 10px; font-size: 24px; color: #000000; font-weight: bold; }
+        
+        .input-wrapper-flex { display: flex; gap: 10px; align-items: center; width: 100%; }
+        .input-wrapper { position: relative; display: flex; align-items: center; }
+
+        input { 
+            width: 100%; padding: 15px 40px; box-sizing: border-box; 
+            border: 2px solid #000000; border-radius: 10px; color: #000000; 
+            font-size: 24px; font-weight: bold; outline: none; height: 60px; text-align: center; 
+        }
+        input#amount { 
+            background: #c8e6c9; padding: 10px; flex: 1; 
+            font-size: 30px; height: 70px;
+        }
+        
+        input#ppID { 
+            background: #ffffff !important; 
+            color: #000000 !important; 
+        }
+        input.edit-input { background: #f9f9f9; }
+
+        .presets { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 10px;}
+        .preset-option { background: #ffffff; border: 2px solid #000000; border-radius: 10px; padding: 15px; display: flex; align-items: center; cursor: pointer; height: 60px; box-sizing: border-box; }
+        .preset-option input[type="radio"] { margin-right: 15px; width: 25px; height: 25px; accent-color: #000000; transform: scale(1.2); }
+        .name { font-weight: bold; color: #000000; font-size: 26px; }
+        
+        .clear-btn { 
+            position: absolute; right: 10px; top: 50%; transform: translateY(-50%); 
+            background: none; border: none; font-size: 20px; font-weight: bold; cursor: pointer; display: none; color: #d32f2f;
+        }
+        .clear-btn-ext {
+            height: 70px; width: 80px; background: #d32f2f; color: white; border: none; border-radius: 10px;
+            font-size: 20px; font-weight: bold; cursor: pointer; display: none; flex-shrink: 0;
+        }
+
+        .stats-display-bar {
+            font-size: 18px; color: #000000; margin-bottom: 5px; text-align: center;
+            background: #fdfdfd; padding: 8px 10px; border-radius: 8px; border: 1px dashed #ccc; display: none; 
+            line-height: 1.5;
+        }
+        .stats-display-bar strong { color: #000000; font-size: 18px; }
+
+        .switch-ui-row {
+            display: flex; align-items: center; justify-content: center; margin-bottom: 15px; 
+            background: #f9f9f9; padding: 8px; border-radius: 10px; gap: 10px;
+        }
+        .status-text { font-size: 16px; font-weight: bold; }
+        .status-on { color: #2e7d32; }
+        .status-off { color: #9e9e9e; }
+
+        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-top: 10px; }
+        .history-title { font-weight: bold; font-size: 20px; display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2;}
+        .history-count-sub { font-size: 14px; color: #666; font-weight: normal; }
+
+        .summary-box { margin-bottom: 10px; width: 100%; }
+        /* Task 1: "สรุปยอด" 25px Bold */
+        .summary-title { font-weight: bold; font-size: 25px; }
+        
+        .date-filter-container {
+            display: flex; flex-direction: column; align-items: flex-start; 
+            background: #f0f0f0; padding: 10px; border-radius: 8px; margin-bottom: 15px;
+        }
+        .date-filter-row { 
+            display: flex; justify-content: space-between; width: 100%; align-items: center; 
+            font-size: 18px;
+        }
+        .date-input { font-size: 18px; padding: 8px; border-radius: 8px; border: 1px solid #ccc; font-weight: bold; background: #fff; cursor: pointer; }
+
+        /* Task 2: Daily Summary Table Style */
+        .summary-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+        .summary-table td { 
+            font-size: 18px; /* Task 2: 18px */
+            padding: 8px 5px;
+            vertical-align: middle;
+            border-bottom: 1px dotted #ccc; 
+        }
+        
+        .group-header td { font-weight: bold; font-size: 22px; background-color: #eee; padding-top: 15px; border-bottom: 2px solid #fff; color: #000; text-align: left; }
+        .yearly-text { font-size: 18px; color: #000; font-weight: normal; margin-left: 15px; }
+        
+        /* Task 2: Justify Classes for Daily Summary Rows */
+        .sum-row-item { border-bottom: 1px dotted #ccc; }
+        .sum-name { font-weight: bold; text-align: left; width: 25%; }
+        .sum-amount { font-weight: bold; text-align: right; white-space: nowrap; width: 25%; }
+        .sum-time { text-align: center; width: 15%; }
+        .sum-date { text-align: center; width: 25%; }
+        .sum-del { text-align: center; width: 10%; }
+
+        .group-total td { font-weight: bold; font-size: 20px; text-align: right; border-bottom: 2px solid #000; background: #fafafa; }
+        .grand-total-row td { font-size: 24px; font-weight: bold; background: #000; color: #fff; padding: 10px; text-align: right; }
+        
+        .btn-delete-row, .btn-del-mini { 
+            width: 20px; height: 20px; background: #fff; border: 1px solid #000;
+            color: #000; font-weight: bold; font-size: 14px; cursor: pointer;
+            line-height: 1; display: inline-flex; justify-content: center; align-items: center;
+            border-radius: 0; padding: 0;
+        }
+        .btn-delete-row:hover, .btn-del-mini:hover { background: #eee; }
+        
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #fff; padding: 20px; border-radius: 10px; width: 90%; max-width: 450px; text-align: center; max-height: 90vh; overflow-y: auto; position: relative;}
+        .modal-content-large { background: #fff; padding: 20px; border-radius: 10px; width: 95%; max-width: 600px; height: 90vh; text-align: center; overflow-y: auto; position: relative; display: flex; flex-direction: column; }
+
+        .modal-title { font-size: 22px; font-weight: bold; margin-bottom: 15px; }
+        .edit-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .edit-label { font-size: 18px; font-weight: bold; width: 30%; text-align: left; }
+        .edit-input { width: 30%; padding: 5px; font-size: 16px; text-align: center; border: 1px solid #ccc; border-radius: 5px; background: #fff; }
+        .modal-actions { display: flex; justify-content: space-between; margin-top: 20px; gap: 5px; align-items: center; }
+        
+        .btn-save-modal-qr { 
+            background: #4CAF50; color: #fff; border: none; padding: 15px; flex:1; 
+            border-radius: 5px; cursor: pointer; margin-left: 5px;
+            font-size: 25px;
+            font-weight: bold;
+        }
+
+        .btn-save { background: #4CAF50; color: #fff; border: none; padding: 10px; flex:1; border-radius: 5px; font-size: 18px; cursor: pointer; margin-left: 5px; }
+        .btn-cancel { background: #f44336; color: #fff; border: none; padding: 10px; flex:1; border-radius: 5px; font-size: 18px; cursor: pointer; margin-right: 5px;}
+        .btn-reset-modal { background: #fff; border: 1px solid #d32f2f; color: #d32f2f; padding: 10px; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold; margin: 0 5px; }
+        
+        .btn-export-option { width: 100%; padding: 15px; margin-bottom: 10px; font-size: 18px; font-weight: bold; border-radius: 10px; cursor: pointer; border: none; }
+        .btn-copy-cb { background: #000; color: #fff; }
+        .btn-line-dynamic { background: #06c755; color: #fff; padding: 10px; margin-bottom: 5px; font-size: 18px; font-weight: bold; border-radius: 10px; cursor: pointer; border: none; width: 100%; }
+
+        .btn-clear-faded { background: #f5f5f5; color: #999; border: 1px solid #ddd; padding: 5px 15px; border-radius: 12px; font-size: 14px; cursor: pointer; font-weight: bold; }
+
+        .qr-modal-content { background: #fff; padding: 20px; border-radius: 15px; width: 95%; max-width: 500px; text-align: center; position: relative; display: flex; flex-direction: column; align-items: center; }
+        .qr-modal-close-icon { position: absolute; top: 10px; right: 15px; font-size: 30px; cursor: pointer; color: #aaa; line-height: 1; }
+
+        .acc-list-item { border: 1px solid #ccc; border-radius: 8px; padding: 10px; margin-bottom: 10px; text-align: left; position: relative; }
+        .acc-list-item.is-default { border-color: #4CAF50; background: #e8f5e9; }
+        .acc-list-item.is-autoswitch { border-color: #2196F3; background: #e3f2fd; }
+        .acc-actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; }
+        .btn-acc-action { padding: 3px 8px; font-size: 12px; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; background: #fff;}
+        .btn-add-acc { width: 100%; padding: 10px; background: #000; color: #fff; border: none; border-radius: 8px; font-size: 16px; cursor: pointer; margin-bottom: 15px; }
+        .form-row { margin-bottom: 10px; text-align: left; }
+        .form-row label { font-size: 14px; margin-bottom: 5px; }
+        .form-row input { height: 40px; font-size: 16px; padding: 5px; width: 100%; }
+        .checkbox-row { display: flex; align-items: center; margin-bottom: 5px; }
+        .checkbox-row input { width: 20px; height: 20px; margin-right: 10px; }
+        .checkbox-row label { font-size: 16px; margin: 0; font-weight: normal; }
+
+        .color-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 5px; }
+        .color-input-group { display: flex; align-items: center; gap: 5px; }
+        .color-picker { width: 40px; height: 40px; border: none; cursor: pointer; background: none; }
+        .color-text { width: 80px; text-align: center; font-size: 14px; padding: 5px; border: 1px solid #ccc; border-radius: 5px; }
+        .size-input { width: 80px; text-align: center; font-size: 14px; padding: 5px; border: 1px solid #ccc; border-radius: 5px; }
+        
+        .tts-group { display: flex; align-items: center; justify-content: flex-end; width: 60%; gap: 10px; }
+        .tts-checkbox { width: 20px; height: 20px; accent-color: #000; }
+        .tts-input { width: 100%; padding: 5px; border: 1px solid #ccc; border-radius: 5px; font-size: 14px; }
+        .section-header { font-weight: bold; margin-top: 20px; margin-bottom: 10px; text-align: left; border-bottom: 2px solid #ddd; padding-bottom: 5px;}
+
+        .top-action-bar {
+            display: flex; gap: 10px; width: 100%; margin-bottom: 15px;
+        }
+        .btn-close-top {
+            flex: 1; background: #f44336; color: white; border: none; padding: 10px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
+        }
+        .btn-send-report-top {
+            flex: 1; background: #DBDBFC; color: #000; border: 2px solid #000; padding: 10px; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer;
+        }
+
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <div class="qr-section">
+        <div class="rotated-container">
+            <div id="rotatedNameDisplay" class="rotated-text-line"></div>
+            <div id="rotatedAmountDisplay" class="rotated-text-line"></div>
+        </div>
+        <div id="qrcode"></div>
+        
+        <div class="bottom-section">
+            <div id="amountDisplay"></div>
+            <div id="accountNameDisplay"></div>
+        </div>
+    </div>
+
+    <div class="form-header">
+        <button class="btn-small-outline btn-theme-fit" onclick="openThemeModal()">THEME</button>
+    </div>
+
+    <div class="form-section">
+        <div class="input-group">
+            <div id="statsDisplayTop" class="stats-display-bar"></div>
+            
+            <label class="amount-label">จำนวนเงิน (บาท)</label>
+            <div class="input-wrapper-flex">
+                <input type="number" id="amount" placeholder="0.00" inputmode="decimal" oninput="checkAmount(); generate()" step="0.01">
+                <button class="clear-btn-ext" id="clearAmountBtn" onclick="clearAmount()">ลบ</button>
+            </div>
+        </div>
+        
+        <div class="flex-row">
+            <button class="btn-show-qr btn-square-lg" onclick="openQRModal()">แสดง<br>QR Code</button>
+            <button class="action-btn btn-square-lg" onclick="saveTransaction()">บันทึก</button>
+        </div>
+        
+        <div class="input-group">
+            <label>PromptPay ID</label>
+            <div class="input-wrapper">
+                <input type="tel" id="ppID" placeholder="08x-xxx-xxxx" inputmode="numeric" oninput="userTyping()" value="">
+                <button class="clear-btn" id="clearIDBtn" onclick="clearID()">ลบ</button>
+            </div>
+        </div>
+        <div class="input-group">
+            <div class="switch-ui-row">
+                <span id="autoSwitchStatusLabel" class="status-text status-off">สถานะ: ปิด</span>
+                <button class="btn-small-outline" onclick="openAutoSwitchModal()">สลับบัญชีอัตโนมัติ</button>
+            </div>
+
+            <div id="statsDisplayMiddle" class="stats-display-bar"></div>
+            
+            <div class="account-header">
+                <label style="margin:0; font-size: 20px;">เลือกบัญชี</label>
+            </div>
+            
+            <div id="accountPresets" class="presets"></div>
+            
+             <div class="flex-row" style="margin-top: 15px;">
+                <button class="btn-small-outline" id="btnOverride" onclick="openOverrideModal()">ข้ามการตรวจสอบ</button>
+                <button class="btn-small-outline" onclick="openAccountManager()">ตั้งค่าบัญชี</button>
+            </div>
+
+            <div class="flex-row" style="margin-top: 10px;">
+                <button class="btn-menu-lg btn-square-lg" onclick="exportBackup()">สำรอง<br>ข้อมูล</button>
+                <button class="btn-menu-lg btn-square-lg" onclick="openReportModal()">รายงาน</button>
+            </div>
+             
+        </div>
+    </div>
+</div>
+
+<div id="reportModal" class="modal-overlay">
+    <div class="modal-content-large">
+        
+        <div class="top-action-bar">
+            <button class="btn-close-top" onclick="closeReportModal()">ปิด</button>
+            <button class="btn-send-report-top" onclick="openExportModal()">ส่งรายงาน</button>
+        </div>
+
+        <div class="date-filter-container">
+            <div class="date-filter-row">
+                <span class="summary-title">สรุปยอด</span>
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <span style="font-weight:bold;">เลือกวัน :</span>
+                    <input type="date" id="dateFilter" class="date-input" onchange="renderHistory()">
+                </div>
+            </div>
+            <div id="reportDateDisplay" style="font-size:20px; color:#000; margin-top:5px; font-weight:bold; width: 100%; text-align: left;"></div>
+        </div>
+        
+        <div id="dailySummary" class="summary-box"></div>
+        
+        <div id="historyTableWrapper" style="margin-top: 20px;">
+            <div style="margin-top: 15px; text-align: center;">
+                 <button class="btn-clear-faded" onclick="openClearHistoryModal()">ล้างประวัติ</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="exportModal" class="modal-overlay" style="z-index: 1200;">
+    <div class="modal-content">
+        <div class="modal-title">ส่งรายงาน</div>
+        <button class="btn-export-option btn-copy-cb" onclick="copyToClipboard()">คัดลอกไปยังคลิปบอร์ด</button>
+        <div id="dynamicLineButtons"></div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeExportModal()">ปิด</button>
+        </div>
+    </div>
+</div>
+
+<div id="autoSwitchModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-title">ตั้งค่าสลับบัญชีอัตโนมัติ</div>
+        <div class="checkbox-row" style="justify-content:center; margin-bottom:20px;">
+             <input type="checkbox" id="confirmAutoSwitch" onchange="toggleAutoSwitch()">
+             <label for="confirmAutoSwitch">เปิดใช้งานการสลับบัญชี</label>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="document.getElementById('autoSwitchModal').style.display='none'">ปิด</button>
+        </div>
+    </div>
+</div>
+
+<div id="overrideModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-title">ยืนยันการข้ามตรวจสอบ</div>
+        <div class="checkbox-row" style="justify-content:center;">
+             <input type="checkbox" id="confirmOverride" onchange="toggleOverride()">
+             <label for="confirmOverride">เปิดใช้งาน Admin Override</label>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeOverrideModal()">ปิด</button>
+        </div>
+    </div>
+</div>
+
+<div id="limitAlertModal" class="modal-overlay" style="z-index: 1300;">
+    <div class="modal-content">
+        <div class="modal-title" style="color:red;">⚠️ แจ้งเตือนวงเงิน</div>
+        <div id="limitAlertMsg" style="font-size:18px; margin-bottom:20px;"></div>
+        <button class="btn-save" onclick="closeLimitAlertModal()">รับทราบ</button>
+    </div>
+</div>
+
+<div id="historyLimitModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-title">กำหนดจำนวนแสดง</div>
+        <input type="number" id="historyLimitInput" class="edit-input" style="width:50%;" value="50">
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="document.getElementById('historyLimitModal').style.display='none'">ยกเลิก</button>
+            <button class="btn-save" onclick="saveHistoryLimit()">บันทึก</button>
+        </div>
+    </div>
+</div>
+
+<div id="clearHistoryModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-title" style="color:red;">ล้างประวัติทั้งหมด?</div>
+        <p>ยอดสะสมรายปีจะไม่ถูกลบ</p>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="document.getElementById('clearHistoryModal').style.display='none'">ยกเลิก</button>
+            <button class="btn-save" style="background:red;" onclick="confirmClearHistory()">ยืนยันลบ</button>
+        </div>
+    </div>
+</div>
+
+<div id="deleteRowModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-title" style="color:red;">ลบรายการนี้?</div>
+        <div id="deleteItemInfo" style="margin-bottom: 20px; font-size: 18px; text-align: left; background: #f9f9f9; padding: 15px; border-radius: 8px;"></div>
+        <p style="font-size:14px; color:#666;">ยอดเงินจะถูกหักออกจากยอดสะสม</p>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="document.getElementById('deleteRowModal').style.display='none'">ยกเลิก</button>
+            <button class="btn-save" style="background:red;" onclick="confirmDeleteRow()">ยืนยันลบ</button>
+        </div>
+    </div>
+</div>
+
+<div id="clearIDModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-title">ลบ PromptPay ID?</div>
+        <p>ข้อมูลบัญชีจะถูกล้าง</p>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="document.getElementById('clearIDModal').style.display='none'">ยกเลิก</button>
+            <button class="btn-save" style="background:red;" onclick="confirmClearID()">ยืนยันลบ</button>
+        </div>
+    </div>
+</div>
+
+<div id="qrModalPreview" class="modal-overlay">
+    <div class="qr-modal-content">
+        <span class="qr-modal-close-icon" onclick="closeQRModal()">×</span>
+        <div class="rotated-container" id="modalRotatedContainer" style="margin-top: 20px;">
+            <div id="modalRotatedName" class="rotated-text-line"></div>
+            <div id="modalRotatedAmount" class="rotated-text-line"></div>
+        </div>
+        <div id="modalQrcode" style="margin: 10px 0;"></div>
+        <div class="bottom-section" id="modalBottomSection" style="padding: 10px 0; margin-top:5px; transform: scale(0.9);">
+            <div id="modalAmountDisplay"></div>
+            <div id="modalAccountNameDisplay"></div>
+        </div>
+        <div class="modal-actions" style="margin-top: 20px; width: 100%;">
+            <button class="btn-cancel" onclick="closeQRModal()">ปิด</button>
+            <button class="btn-save-modal-qr" onclick="saveFromModal()">บันทึก</button>
+        </div>
+    </div>
+</div>
+
+<div id="themeModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-title">ปรับแต่งธีมสี</div>
+        <div class="color-row"><label>1. กลับหัว (BG):</label><div class="color-input-group"><input type="color" id="themeRotated" class="color-picker" onchange="updateThemePreview()"><input type="text" id="textRotated" class="color-text" onchange="syncColorInput('Rotated')"></div></div>
+        <div class="color-row"><label>ขนาดตัวอักษรกลับหัว:</label><div class="color-input-group"><input type="number" id="sizeRotated" class="size-input" onchange="updateThemePreview()"></div></div>
+        <div class="color-row"><label>2. ไม่กลับหัว (BG):</label><div class="color-input-group"><input type="color" id="themeBottom" class="color-picker" onchange="updateThemePreview()"><input type="text" id="textBottom" class="color-text" onchange="syncColorInput('Bottom')"></div></div>
+        <div class="color-row"><label>ขนาดตัวอักษรไม่กลับหัว:</label><div class="color-input-group"><input type="number" id="sizeBottom" class="size-input" onchange="updateThemePreview()"></div></div>
+        <div class="color-row"><label>3. ช่องจำนวนเงิน:</label><div class="color-input-group"><input type="color" id="themeAmount" class="color-picker" onchange="updateThemePreview()"><input type="text" id="textAmount" class="color-text" onchange="syncColorInput('Amount')"></div></div>
+        <div class="color-row"><label>4. ปุ่มบันทึก:</label><div class="color-input-group"><input type="color" id="themeBtn" class="color-picker" onchange="updateThemePreview()"><input type="text" id="textBtn" class="color-text" onchange="syncColorInput('Btn')"></div></div>
+        <div class="color-row"><label>5. ปุ่มแสดง QR:</label><div class="color-input-group"><input type="color" id="themeShowQrBtn" class="color-picker" onchange="updateThemePreview()"><input type="text" id="textShowQrBtn" class="color-text" onchange="syncColorInput('ShowQrBtn')"></div></div>
+
+        <div class="section-header">ตั้งค่าเสียงพูด (TTS)</div>
+        <div class="color-row"><label>พูด: ยอดเงิน</label><div class="tts-group"><input type="checkbox" id="ttsCheck1" class="tts-checkbox"><input type="text" id="ttsInput1" class="tts-input"></div></div>
+        <div class="color-row"><label>พูด: ชื่อบัญชี</label><div class="tts-group"><input type="checkbox" id="ttsCheck2" class="tts-checkbox"><input type="text" id="ttsInput2" class="tts-input"></div></div>
+        <div class="color-row"><label>พูด: ข้อความปิด</label><div class="tts-group"><input type="checkbox" id="ttsCheck3" class="tts-checkbox"><input type="text" id="ttsInput3" class="tts-input"></div></div>
+
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="resetThemeDefaults()">คืนค่าเดิม</button>
+            <button class="btn-save" onclick="saveTheme()">บันทึก</button>
+        </div>
+    </div>
+</div>
+
+<div id="sheetSettingsModal" class="modal-overlay" style="z-index: 1100;">
+    <div class="modal-content">
+        <div class="modal-title">ตั้งค่า Google Sheet</div>
+        <div class="form-row">
+            <label>Script URL</label>
+            <input type="text" id="sheetUrlInput" style="font-size:14px; text-align:left;" placeholder="https://script.google.com/...">
+        </div>
+        <div class="checkbox-row" style="margin-top:15px; justify-content:center;">
+             <input type="checkbox" id="sheetActiveCheck" checked>
+             <label for="sheetActiveCheck">ส่งข้อมูล</label>
+        </div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeSheetSettings()">ยกเลิก</button>
+            <button class="btn-save" onclick="saveSheetSettings()">บันทึก</button>
+        </div>
+    </div>
+</div>
+
+<div id="accModal" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-title">ตั้งค่าบัญชี (สูงสุด 10)</div>
+        <div id="accMainView">
+            <button class="btn-add-acc" onclick="showAccForm()">+ เพิ่มบัญชีใหม่</button>
+            <div id="accList"></div>
+            <div class="modal-actions" style="margin-top:20px; flex-direction:column; gap:10px;">
+                <div class="flex-row">
+                     <button class="btn-small-outline" onclick="showStatsForm()">แก้ไขยอดสะสม</button>
+                     <button class="btn-small-outline" onclick="openSheetSettings()">Google Sheet URL</button>
+                </div>
+                <button class="btn-save" onclick="triggerImport()" style="background:#011840; margin:0; width:100%;">นำเข้า (Import)</button>
+                <button class="btn-cancel" onclick="closeAccModal()">ปิด</button>
+            </div>
+        </div>
+
+        <div id="accForm" style="display:none; border:1px solid #ccc; padding:10px; margin-bottom:15px; border-radius:8px; background:#f9f9f9;">
+            <input type="hidden" id="accId">
+            <div class="form-row"><label>ชื่อตัวเลือก (เช่น ซาน)</label><input type="text" id="accName"></div>
+            <div class="form-row"><label>ชื่อบน QR Code</label><input type="text" id="accQrName"></div>
+            <div class="form-row"><label>PromptPay ID</label><input type="text" id="accPpID"></div>
+            <div class="form-row"><label>Limit ต่อวัน (บาท)</label><input type="number" id="accLimit" value="0"></div>
+            <div class="form-row"><label>Limit จำนวนครั้ง/ปี</label><input type="number" id="accLimitYearCount" value="0"></div>
+            <div class="form-row"><label>Limit ยอดรวม/ปี (บาท)</label><input type="number" id="accLimitYearTotal" value="0"></div>
+            <div class="checkbox-row"><input type="checkbox" id="accDefault"><label for="accDefault">ตั้งเป็น Default</label></div>
+            <div class="checkbox-row"><input type="checkbox" id="accAutoSwitch"><label for="accAutoSwitch">สลับอัตโนมัติ</label></div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="hideAccForm()">ยกเลิก</button>
+                <button class="btn-save" onclick="saveAccountConfig()">บันทึก</button>
+            </div>
+        </div>
+
+        <div id="accStatsForm" style="display:none; border:1px solid #ccc; padding:10px; margin-bottom:15px; border-radius:8px; background:#f9f9f9;">
+            <h3 style="margin-top:0;">แก้ไขยอดสะสมปีนี้</h3>
+            <div id="accStatsInputs"></div>
+            <div class="modal-actions">
+                <button class="btn-cancel" onclick="hideStatsForm()">ยกเลิก</button>
+                <button class="btn-reset-modal" onclick="resetInputsToZero()">รีเซ็ต</button>
+                <button class="btn-save" onclick="saveStatsInternal()">บันทึก</button>
+            </div>
+        </div>
+        
+         <input type="file" id="importFile" accept=".json" style="display:none" onchange="importBackup(this)">
+    </div>
+</div>
+
+<script>
+    let qrcodeObj = null;
+    let modalQrcodeObj = null;
+    let currentNick = ""; 
+    let adminOverride = false;
+    let historyLimit = 50;
+    let isAutoSwitchEnabled = true;
+    let pendingDeleteId = null; 
+    
+    // Task 4: New Default URL
+    const DEFAULT_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyuv8ykOHgzN8q_FtLdINiev_vlVYZFVQkMhBHv1XcFYVxiUS358-KURbDpGVY9zRjf/exec";
+
+    const DEFAULT_ACCOUNTS = [
+        { id: 'acc_1', name: 'ซาน', qrName: 'บัญชี อธิพงษ์', ppID: '0811228800', limit: 0, limitYearCount: 0, limitYearTotal: 0, isDefault: true, isAutoSwitch: true },
+        { id: 'acc_2', name: 'ภา', qrName: 'บัญชี บุญภา', ppID: '0810228800', limit: 0, limitYearCount: 0, limitYearTotal: 0, isDefault: false, isAutoSwitch: true }
+    ];
+
+    const DEFAULT_THEME = {
+        rotated: '#C5F3E3', bottom: '#FFF9E8', amount: '#c8e6c9', btn: '#011840', showQrBtn: '#DBDBFC',
+        fontSizeRotated: '40', fontSizeBottom: '32',
+        ttsEnabled1: true, ttsText1: 'ยอด', ttsEnabled2: true, ttsText2: 'บัญชี', 
+        ttsEnabled3: true, ttsText3: 'ขอดูสะลิปหลังทำรายการ' 
+    };
+
+    let accounts = [];
+    let currentTheme = {...DEFAULT_THEME};
+
+    window.onload = function() {
+        loadTheme(); 
+        loadAccounts(); 
+        renderAccountPresets();
+        applyStartupLogic();
+        historyLimit = parseInt(localStorage.getItem('qrHistoryLimit') || "50");
+        
+        document.getElementById('confirmAutoSwitch').checked = isAutoSwitchEnabled;
+        updateAutoSwitchUI();
+
+        const dateInput = document.getElementById('dateFilter');
+        if(dateInput) {
+            const now = new Date();
+            const yyyy = now.getFullYear();
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            dateInput.value = `${yyyy}-${mm}-${dd}`;
+        }
+        
+        if (!localStorage.getItem('qrSheetUrl')) {
+            localStorage.setItem('qrSheetUrl', DEFAULT_SCRIPT_URL);
+            localStorage.setItem('qrSheetActive', 'true');
+        }
+    };
+
+    // --- Core Logic ---
+    function openOverrideModal() { document.getElementById('overrideModal').style.display = 'flex'; }
+    function closeOverrideModal() { document.getElementById('overrideModal').style.display = 'none'; }
+    function toggleOverride() {
+        adminOverride = document.getElementById('confirmOverride').checked;
+        const btn = document.getElementById('btnOverride');
+        if(adminOverride) {
+            btn.classList.add('active');
+            btn.innerText = "ข้ามตรวจสอบ (ON)";
+        } else {
+            btn.classList.remove('active');
+            btn.innerText = "ข้ามการตรวจสอบ";
+        }
+        closeOverrideModal();
+        checkLimits(); 
+    }
+
+    function openAutoSwitchModal() { document.getElementById('autoSwitchModal').style.display = 'flex'; }
+    function toggleAutoSwitch() {
+        isAutoSwitchEnabled = document.getElementById('confirmAutoSwitch').checked;
+        updateAutoSwitchUI();
+    }
+    function updateAutoSwitchUI() {
+        const lbl = document.getElementById('autoSwitchStatusLabel');
+        lbl.innerText = isAutoSwitchEnabled ? "สถานะ: เปิด" : "สถานะ: ปิด";
+        lbl.className = isAutoSwitchEnabled ? "status-text status-on" : "status-text status-off";
+    }
+
+    function checkAmount() {
+        const val = document.getElementById('amount').value;
+        const clrBtn = document.getElementById('clearAmountBtn');
+        if (val) clrBtn.style.display = 'block'; else clrBtn.style.display = 'none';
+        checkLimits();
+    }
+    
+    function calculateDailyTotal(accName) {
+        if (!accName || accName === "กำหนดเอง") return 0;
+        const history = JSON.parse(localStorage.getItem('qrHistory') || "[]");
+        const todayStr = new Date().toLocaleDateString('th-TH');
+        let total = 0;
+        history.forEach(item => {
+             if (item.date === todayStr && item.name === accName) total += parseFloat(item.amount);
+        });
+        return total;
+    }
+
+    function checkLimits(isPostSave = false) {
+        if (adminOverride) return false;
+        
+        const acc = accounts.find(a => a.name === currentNick);
+        if (!acc) return false;
+        
+        const inputAmount = parseFloat(document.getElementById('amount').value) || 0;
+        const dailyLimit = parseFloat(acc.limit);
+        const currentDailyTotal = calculateDailyTotal(acc.name);
+        
+        if (dailyLimit > 0) {
+             if ((currentDailyTotal + inputAmount) > (dailyLimit + 500)) {
+                 triggerLimitAlert(`ยอมรวมจะเกิน Hard Cap (${(currentDailyTotal + inputAmount).toLocaleString()} > ${dailyLimit.toLocaleString()} + 500)`);
+                 return true;
+             }
+             if (currentDailyTotal >= dailyLimit) {
+                 if (isPostSave || inputAmount > 0) {
+                      if(isPostSave) triggerLimitAlert(`ยอดวันนี้เต็มวงเงินแล้ว (${currentDailyTotal.toLocaleString()} / ${dailyLimit.toLocaleString()})`);
+                      else triggerLimitAlert(`ยอดวันนี้เต็มวงเงินแล้ว (${currentDailyTotal.toLocaleString()} / ${dailyLimit.toLocaleString()}) \nไม่สามารถทำรายการเพิ่มได้`);
+                      return true;
+                 }
+             }
+        }
+
+        const limitYearCount = parseInt(acc.limitYearCount || 0);
+        const limitYearTotal = parseFloat(acc.limitYearTotal || 0);
+        
+        if (limitYearCount > 0 || limitYearTotal > 0) {
+             const yearly = JSON.parse(localStorage.getItem('qrYearlyStats') || "{}");
+             const stats = yearly[acc.name] || { count: 0, total: 0 };
+             
+             if (limitYearCount > 0 && (stats.count + (isPostSave?0:1)) > limitYearCount) {
+                  triggerLimitAlert(`จำนวนครั้งปีนี้ (${stats.count}) เต็ม Limit (${limitYearCount}) แล้ว`);
+                  return true;
+             }
+             if (limitYearTotal > 0 && (stats.total + inputAmount) > limitYearTotal) {
+                  triggerLimitAlert(`ยอดรวมปีนี้ (${(stats.total + inputAmount).toLocaleString()}) เกิน Limit (${limitYearTotal.toLocaleString()})`);
+                  return true;
+             }
+        }
+        return false;
+    }
+
+    function triggerLimitAlert(msg) {
+        document.getElementById('amount').blur(); 
+        document.getElementById('limitAlertMsg').innerText = msg + "\n\nระบบจะเปลี่ยนไปใช้บัญชี Default";
+        document.getElementById('limitAlertModal').style.display = 'flex';
+    }
+    
+    function closeLimitAlertModal() {
+        document.getElementById('limitAlertModal').style.display = 'none';
+        switchToDefault();
+        generate();
+    }
+
+    function updateAccountStatsDisplay() {
+        const divTop = document.getElementById('statsDisplayTop');
+        const divMid = document.getElementById('statsDisplayMiddle');
+        
+        if (!currentNick || currentNick === "กำหนดเอง") {
+            divTop.style.display = 'none'; divMid.style.display = 'none'; return;
+        }
+        const acc = accounts.find(a => a.name === currentNick);
+        if (!acc) { divTop.style.display = 'none'; divMid.style.display = 'none'; return; }
+
+        const yearly = JSON.parse(localStorage.getItem('qrYearlyStats') || "{}");
+        const stats = yearly[acc.name] || { count: 0, total: 0 };
+        
+        const history = JSON.parse(localStorage.getItem('qrHistory') || "[]");
+        const todayStr = new Date().toLocaleDateString('th-TH');
+        let dailyC = 0, dailyT = 0;
+        history.forEach(item => {
+             if (item.date === todayStr && item.name === acc.name) {
+                 dailyC++; dailyT += parseFloat(item.amount);
+             }
+        });
+
+        const html = `<strong>${acc.name}:</strong> ปีนี้ ${stats.count} ครั้ง | ${stats.total.toLocaleString()} บาท <br> (วันนี้: ${dailyC} ครั้ง | ${dailyT.toLocaleString()} บาท)`;
+        
+        divTop.style.display = 'block'; divTop.innerHTML = html;
+        divMid.style.display = 'block'; divMid.innerHTML = html;
+    }
+
+    function loadTheme() {
+        const stored = localStorage.getItem('qrTheme');
+        if (stored) currentTheme = { ...DEFAULT_THEME, ...JSON.parse(stored) };
+        applyTheme(currentTheme);
+    }
+    function applyTheme(t) {
+        document.querySelectorAll('.rotated-container').forEach(el => el.style.backgroundColor = t.rotated || '#C5F3E3');
+        document.querySelectorAll('.bottom-section').forEach(el => el.style.backgroundColor = t.bottom || '#FFF9E8');
+        const setSize = (id, s) => { const el = document.getElementById(id); if(el) el.style.fontSize = s + 'px'; };
+        setSize('rotatedNameDisplay', t.fontSizeRotated); setSize('rotatedAmountDisplay', t.fontSizeRotated);
+        setSize('modalRotatedName', t.fontSizeRotated); setSize('modalRotatedAmount', t.fontSizeRotated);
+        const bSize = parseInt(t.fontSizeBottom || '32');
+        setSize('accountNameDisplay', bSize); 
+        const elAmt = document.getElementById('amountDisplay'); if(elAmt) elAmt.style.fontSize = (bSize + 4) + 'px';
+        setSize('modalAccountNameDisplay', bSize * 0.8);
+        const elModalAmt = document.getElementById('modalAmountDisplay'); if(elModalAmt) elModalAmt.style.fontSize = (bSize * 0.8 + 4) + 'px';
+        const elAmtInput = document.getElementById('amount'); if(elAmtInput) elAmtInput.style.backgroundColor = t.amount || '#c8e6c9';
+        const btn = document.querySelector('.action-btn'); if(btn) { btn.style.background = t.btn || '#011840'; btn.style.borderColor = t.btn; }
+        const btnQr = document.querySelector('.btn-show-qr'); if(btnQr) btnQr.style.backgroundColor = t.showQrBtn || '#DBDBFC';
+    }
+    function openThemeModal() {
+        ['Rotated','Bottom','Amount','Btn','ShowQrBtn'].forEach(k => {
+            const v = currentTheme[k.charAt(0).toLowerCase() + k.slice(1)];
+            if(document.getElementById('theme'+k)) { document.getElementById('theme'+k).value = v; document.getElementById('text'+k).value = v; }
+        });
+        if(currentTheme.btn) { document.getElementById('themeBtn').value=currentTheme.btn; document.getElementById('textBtn').value=currentTheme.btn; } 
+        document.getElementById('sizeRotated').value = currentTheme.fontSizeRotated;
+        document.getElementById('sizeBottom').value = currentTheme.fontSizeBottom;
+        document.getElementById('ttsCheck1').checked = !!currentTheme.ttsEnabled1;
+        document.getElementById('ttsInput1').value = currentTheme.ttsText1 || 'ยอด';
+        document.getElementById('ttsCheck2').checked = !!currentTheme.ttsEnabled2;
+        document.getElementById('ttsInput2').value = currentTheme.ttsText2 || 'บัญชี';
+        document.getElementById('ttsCheck3').checked = !!currentTheme.ttsEnabled3;
+        document.getElementById('ttsInput3').value = currentTheme.ttsText3 || 'ขอดูสะลิปหลังทำรายการ'; 
+        document.getElementById('themeModal').style.display = 'flex';
+    }
+    function updateThemePreview() {
+         const preview = {
+            rotated: document.getElementById('themeRotated').value, fontSizeRotated: document.getElementById('sizeRotated').value,
+            bottom: document.getElementById('themeBottom').value, fontSizeBottom: document.getElementById('sizeBottom').value,
+            amount: document.getElementById('themeAmount').value, btn: document.getElementById('themeBtn').value,
+            showQrBtn: document.getElementById('themeShowQrBtn').value
+         };
+         applyTheme(preview);
+    }
+    function saveTheme() {
+        currentTheme = {
+            rotated: document.getElementById('themeRotated').value, fontSizeRotated: document.getElementById('sizeRotated').value,
+            bottom: document.getElementById('themeBottom').value, fontSizeBottom: document.getElementById('sizeBottom').value,
+            amount: document.getElementById('themeAmount').value, btn: document.getElementById('themeBtn').value,
+            showQrBtn: document.getElementById('themeShowQrBtn').value,
+            ttsEnabled1: document.getElementById('ttsCheck1').checked, ttsText1: document.getElementById('ttsInput1').value,
+            ttsEnabled2: document.getElementById('ttsCheck2').checked, ttsText2: document.getElementById('ttsInput2').value,
+            ttsEnabled3: document.getElementById('ttsCheck3').checked, ttsText3: document.getElementById('ttsInput3').value
+        };
+        localStorage.setItem('qrTheme', JSON.stringify(currentTheme));
+        document.getElementById('themeModal').style.display = 'none';
+        alert("บันทึกธีมเรียบร้อย");
+    }
+    function resetThemeDefaults() { if(confirm("คืนค่าสีเริ่มต้น?")) { currentTheme = {...DEFAULT_THEME}; localStorage.setItem('qrTheme', JSON.stringify(currentTheme)); applyTheme(currentTheme); document.getElementById('themeModal').style.display='none'; } }
+    function syncColorInput(k) { document.getElementById('theme'+k).value = document.getElementById('text'+k).value; updateThemePreview(); }
+
+    function loadAccounts() { 
+        const stored = localStorage.getItem('qrAccounts');
+        if (stored) { accounts = JSON.parse(stored); } else { accounts = JSON.parse(JSON.stringify(DEFAULT_ACCOUNTS)); saveAccountsToStorage(); }
+    }
+    function saveAccountsToStorage() { localStorage.setItem('qrAccounts', JSON.stringify(accounts)); renderAccountPresets(); }
+    function renderAccountPresets() {
+        const container = document.getElementById('accountPresets'); container.innerHTML = "";
+        accounts.forEach(acc => {
+            container.innerHTML += `<label class="preset-option"><input type="radio" name="account" value="${acc.ppID}" data-id="${acc.id}" onclick="selectAccountObj('${acc.id}')"><div class="preset-info"><span class="name">${acc.name}</span></div></label>`;
+        });
+    }
+    function selectAccountObj(id) {
+        const acc = accounts.find(a => a.id === id);
+        if (acc) {
+            document.getElementById('ppID').value = acc.ppID;
+            currentNick = acc.name;
+            updateDisplays(acc.qrName);
+            updateAccountStatsDisplay();
+            checkIDBtn(); generate();
+        }
+    }
+    function applyStartupLogic() {
+        const history = JSON.parse(localStorage.getItem('qrHistory') || "[]");
+        const auto = accounts.filter(a => a.isAutoSwitch);
+        let last = null;
+        for (let item of history) { const match = auto.find(a => a.name === item.name); if (match) { last = match; break; } }
+        if (last) {
+            const idx = auto.findIndex(a => a.id === last.id);
+            const next = auto[(idx + 1) % auto.length];
+            const radio = document.querySelector(`input[data-id="${next.id}"]`);
+            if (radio) { radio.checked = true; selectAccountObj(next.id); }
+        } else switchToDefault();
+    }
+    function switchToDefault() {
+        const def = accounts.find(a => a.isDefault) || accounts[0];
+        if (def) { const radio = document.querySelector(`input[data-id="${def.id}"]`); if (radio) { radio.checked = true; selectAccountObj(def.id); } }
+    }
+    
+    function openAccountManager() { renderAccList(); hideAccForm(); hideStatsForm(); document.getElementById('accMainView').style.display = 'block'; document.getElementById('accModal').style.display = 'flex'; }
+    function closeAccModal() { document.getElementById('accModal').style.display = 'none'; }
+    function renderAccList() {
+        const list = document.getElementById('accList'); list.innerHTML = "";
+        accounts.forEach(acc => {
+            let tags = "";
+            if (acc.isDefault) tags += " <span style='color:green;'>[Default]</span>";
+            list.innerHTML += `<div class="acc-list-item"><strong>${acc.name}</strong> (${acc.qrName})<br><small>${acc.ppID}</small>${tags}<div class="acc-actions"><button class="btn-acc-action" onclick="editAccount('${acc.id}')">แก้ไข</button><button class="btn-acc-action" style="color:red;" onclick="deleteAccount('${acc.id}')">ลบ</button></div></div>`;
+        });
+    }
+    function showAccForm(id=null) {
+        document.getElementById('accMainView').style.display = 'none'; document.getElementById('accForm').style.display = 'block';
+        if(id) {
+            const acc = accounts.find(a=>a.id===id);
+            document.getElementById('accId').value = acc.id; document.getElementById('accName').value = acc.name; document.getElementById('accQrName').value = acc.qrName;
+            document.getElementById('accPpID').value = acc.ppID; document.getElementById('accLimit').value = acc.limit;
+            document.getElementById('accLimitYearCount').value = acc.limitYearCount || 0; document.getElementById('accLimitYearTotal').value = acc.limitYearTotal || 0;
+            document.getElementById('accDefault').checked = acc.isDefault; document.getElementById('accAutoSwitch').checked = acc.isAutoSwitch;
+        } else {
+            if(accounts.length>=10){alert("เต็ม 10 บัญชี"); hideAccForm(); return;}
+            document.getElementById('accId').value = ""; document.getElementById('accName').value = ""; document.getElementById('accQrName').value = "";
+            document.getElementById('accPpID').value = ""; document.getElementById('accLimit').value = 0;
+            document.getElementById('accLimitYearCount').value = 0; document.getElementById('accLimitYearTotal').value = 0;
+            document.getElementById('accDefault').checked = false; document.getElementById('accAutoSwitch').checked = false;
+        }
+    }
+    function hideAccForm() { document.getElementById('accForm').style.display = 'none'; document.getElementById('accMainView').style.display = 'block'; }
+    function saveAccountConfig() {
+        const id = document.getElementById('accId').value;
+        const name = document.getElementById('accName').value.trim();
+        const qrName = document.getElementById('accQrName').value.trim();
+        const ppID = document.getElementById('accPpID').value.trim();
+        if(!name || !ppID) return alert("ข้อมูลไม่ครบ");
+        const isDefault = document.getElementById('accDefault').checked;
+        if(isDefault) accounts.forEach(a=>a.isDefault=false);
+        const obj = {
+            id: id || 'acc_'+Date.now(), name, qrName, ppID,
+            limit: parseFloat(document.getElementById('accLimit').value)||0,
+            limitYearCount: parseInt(document.getElementById('accLimitYearCount').value)||0,
+            limitYearTotal: parseFloat(document.getElementById('accLimitYearTotal').value)||0,
+            isDefault, isAutoSwitch: document.getElementById('accAutoSwitch').checked
+        };
+        if(id) { const idx = accounts.findIndex(a=>a.id===id); if(idx!==-1) accounts[idx] = obj; } 
+        else accounts.push(obj);
+        saveAccountsToStorage(); renderAccList(); hideAccForm();
+    }
+    function editAccount(id) { showAccForm(id); }
+    function deleteAccount(id) { if(confirm("ลบ?")) { accounts = accounts.filter(a=>a.id!==id); saveAccountsToStorage(); renderAccList(); } }
+
+    function userTyping() {
+        const radios = document.getElementsByName('account'); for(let r of radios) r.checked = false;
+        currentNick = "กำหนดเอง"; updateDisplays(""); updateAccountStatsDisplay(); checkIDBtn(); generate();
+    }
+    function updateDisplays(text) { document.getElementById('accountNameDisplay').innerText = text; document.getElementById('rotatedNameDisplay').innerText = text; }
+    function clearAmount() { document.getElementById('amount').value = ''; checkAmount(); generate(); }
+    
+    function checkIDBtn() { document.getElementById('clearIDBtn').style.display = document.getElementById('ppID').value ? 'block' : 'none'; }
+    function clearID() { document.getElementById('clearIDModal').style.display='flex'; }
+    function confirmClearID() {
+         document.getElementById('ppID').value = ''; document.getElementById('clearIDModal').style.display='none'; userTyping(); 
+    }
+    
+    function generate() {
+        const ppID = document.getElementById('ppID').value.trim().replace(/[^0-9]/g, '');
+        const amount = parseFloat(document.getElementById('amount').value);
+        const qrDiv = document.getElementById('qrcode');
+        const txt = (amount && !isNaN(amount)) ? (amount%1===0?amount:amount.toFixed(2)) + " บาท" : "";
+        document.getElementById('amountDisplay').innerText = txt;
+        document.getElementById('rotatedAmountDisplay').innerText = txt;
+        
+        qrDiv.innerHTML = "";
+        if(ppID && typeof QRCode !== 'undefined') {
+            try { qrcodeObj = new QRCode(qrDiv, { text: generatePayload(ppID, amount), width: 250, height: 250, colorDark : "#000000", colorLight : "#ffffff", correctLevel : 2 }); } catch(e){}
+        } else if (!ppID) qrDiv.innerHTML = "<span style='color:#aaa;'>...</span>";
+    }
+    function generatePayload(target, amount) {
+        let t = target.replace(/[^0-9]/g, '');
+        let type = (t.length >= 13) ? '02' : '01';
+        if (type === '01' && t.startsWith('0')) t = '0066' + t.substring(1);
+        let d = [ f('00', '01'), f('01', amount ? '12' : '11'), f('29', f('00', 'A000000677010111') + f(type, t)), f('58', 'TH'), f('53', '764') ];
+        if (amount) d.push(f('54', amount.toFixed(2)));
+        let s = d.join('') + '6304'; return s + calcCRC16(s);
+    }
+    function f(id, v) { return id + ('00' + v.length).slice(-2) + v; }
+    function calcCRC16(s) {
+        let crc = 0xFFFF; for (let i=0; i<s.length; i++) { let x = ((crc>>8)^s.charCodeAt(i))&0xFF; x^=x>>4; crc=((crc<<8)^(x<<12)^(x<<5)^x)&0xFFFF; }
+        return ('0000' + crc.toString(16).toUpperCase()).slice(-4);
+    }
+
+    function openReportModal() { renderHistory(); document.getElementById('reportModal').style.display = 'flex'; }
+    function closeReportModal() { document.getElementById('reportModal').style.display = 'none'; }
+    function openExportModal() { document.getElementById('exportModal').style.display='flex'; }
+    function closeExportModal() { document.getElementById('exportModal').style.display='none'; }
+
+    function renderHistory() {
+        const history = JSON.parse(localStorage.getItem('qrHistory') || "[]");
+        // Task 3: Removed main history table rendering from here
+        // But we still need updateDailySummary for the report modal
+        const dateInput = document.getElementById('dateFilter');
+        let dStr = dateInput && dateInput.value ? new Date(dateInput.value).toLocaleDateString('th-TH') : new Date().toLocaleDateString('th-TH');
+        updateDailySummary(history, dStr);
+    }
+
+    function getThaiDateFull(dateObj) {
+        const months = ["กุมภาพันธุ์", "กุมภาพันธ์", "มีนาคม", "เมษายน", "พฤษภาคม", "มิถุนายน", "กรกฎาคม", "สิงหาคม", "กันยายน", "ตุลาคม", "พฤศจิกายน", "ธันวาคม"];
+        return `${dateObj.getDate()} ${months[dateObj.getMonth()]} ${dateObj.getFullYear() + 543}`;
+    }
+
+    function updateDailySummary(history, targetDate) {
+        const box = document.getElementById('dailySummary');
+        const yearly = JSON.parse(localStorage.getItem('qrYearlyStats') || "{}");
+        let dateParts = targetDate.split('/');
+        let niceDate = targetDate;
+        if(dateParts.length === 3) {
+             const day = parseInt(dateParts[0]); const month = parseInt(dateParts[1]); const year = parseInt(dateParts[2]);
+             const months = ["","ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+             niceDate = `${day} ${months[month]} ${year}`;
+        }
+        document.getElementById('reportDateDisplay').innerText = niceDate;
+
+        let html = `<table class="summary-table">`;
+        let dailyStats = {}; let grand = 0;
+        let activeAccounts = []; 
+
+        history.forEach(i => {
+            if(i.date===targetDate) {
+                if(!dailyStats[i.name]) { dailyStats[i.name] = {c:0, t:0, list:[]}; activeAccounts.push(i.name); }
+                dailyStats[i.name].c++; dailyStats[i.name].t+=parseFloat(i.amount); dailyStats[i.name].list.push(i);
+                grand+=parseFloat(i.amount);
+            }
+        });
+        
+        const dynDiv = document.getElementById('dynamicLineButtons');
+        dynDiv.innerHTML = "";
+        dynDiv.innerHTML += `<button class="btn-line-dynamic" onclick="sendToLine()">ส่งข้อความ Line (รวม)</button>`;
+        if (activeAccounts.length > 0) {
+            [...new Set(activeAccounts)].forEach(name => {
+                 dynDiv.innerHTML += `<button class="btn-line-dynamic" onclick="sendSpecificToLine('${name}')">ส่งข้อความ ${name} Line</button>`;
+            });
+        }
+        
+        accounts.forEach(acc => {
+            let d = dailyStats[acc.name] || {c:0, t:0, list:[]};
+            let y = yearly[acc.name] || {count:0, total:0};
+            
+            html += `<tr class="group-header"><td colspan="5"><div style="display:flex; justify-content:space-between;"><span>${acc.name}</span><span class="yearly-text">สะสมปีนี้: ${y.count} ครั้ง ${y.total.toLocaleString()} บ.</span></div></td></tr>`;
+            if(d.list.length>0) {
+                // Task 2: Justify Row, Single Line style
+                d.list.forEach(item => {
+                    html += `<tr class="sum-row-item">
+                        <td class="sum-name">${item.name}</td>
+                        <td class="sum-amount">${parseFloat(item.amount).toLocaleString()} บาท</td>
+                        <td class="sum-time">${item.time}</td>
+                        <td class="sum-date">${item.date}</td>
+                        <td class="sum-del"><span class="btn-del-mini" onclick="deleteItem(${item.id})">×</span></td>
+                    </tr>`;
+                });
+            } else html += `<tr class="group-item"><td colspan="5" style="color:#999; text-align:center;">- ไม่มีรายการ -</td></tr>`;
+            html += `<tr class="group-total"><td colspan="5"><div style="display:flex; justify-content:space-between;"><span>รวม</span><span>${d.c} รายการ : ${d.t.toLocaleString()} บ.</span></div></td></tr>`;
+        });
+        html += `<tr class="grand-total-row"><td colspan="5"><div style="display:flex; justify-content:space-between;"><span>รวมทั้งสิ้น</span><span>${grand.toLocaleString()} บ.</span></div></td></tr></table>`;
+        box.innerHTML = html;
+    }
+
+    function deleteItem(id) {
+        pendingDeleteId = id;
+        const history = JSON.parse(localStorage.getItem('qrHistory') || "[]");
+        const item = history.find(i=>i.id===id);
+        if(item) {
+             document.getElementById('deleteItemInfo').innerHTML = `<div><strong>วันที่:</strong> ${item.date} ${item.time}</div><div><strong>ชื่อ:</strong> ${item.name}</div><div><strong>ยอดเงิน:</strong> ${item.amount} บาท</div>`;
+        }
+        document.getElementById('deleteRowModal').style.display='flex';
+    }
+    function confirmDeleteRow() {
+        if(!pendingDeleteId) return;
+        let h = JSON.parse(localStorage.getItem('qrHistory')||"[]");
+        const item = h.find(i=>i.id===pendingDeleteId);
+        if(item) updateYearlyStats(item.name, -parseFloat(item.amount), -1);
+        h = h.filter(i=>i.id!==pendingDeleteId);
+        localStorage.setItem('qrHistory', JSON.stringify(h));
+        renderHistory(); updateAccountStatsDisplay();
+        document.getElementById('deleteRowModal').style.display='none';
+        pendingDeleteId = null;
+    }
+    
+    function updateYearlyStats(name, amt, cnt) {
+        let y = JSON.parse(localStorage.getItem('qrYearlyStats')||"{}");
+        if(typeof y[name]==='number') y[name]={count:0, total:y[name]};
+        if(!y[name]) y[name]={count:0, total:0};
+        y[name].count+=cnt; y[name].total+=amt;
+        localStorage.setItem('qrYearlyStats', JSON.stringify(y));
+    }
+
+    function showStatsForm() {
+        document.getElementById('accMainView').style.display = 'none'; document.getElementById('accStatsForm').style.display = 'block';
+        const y = JSON.parse(localStorage.getItem('qrYearlyStats')||"{}");
+        let h = '';
+        accounts.forEach(a => {
+            let s = y[a.name] || {count:0, total:0};
+            h += `<div class="edit-row"><div class="edit-label">${a.name}</div><input type="number" class="edit-input" id="count_${a.name}" value="${s.count}" placeholder="ครั้ง"><input type="number" class="edit-input" id="total_${a.name}" value="${s.total}" placeholder="บาท"></div>`;
+        });
+        document.getElementById('accStatsInputs').innerHTML = h;
+    }
+    function hideStatsForm() { document.getElementById('accStatsForm').style.display = 'none'; document.getElementById('accMainView').style.display = 'block'; }
+    function resetInputsToZero() { if(confirm("รีเซ็ตเป็น 0 ทั้งหมด?")) { document.querySelectorAll('#accStatsInputs input').forEach(i => i.value = 0); } }
+    function saveStatsInternal() {
+        let n = {};
+        accounts.forEach(a => { n[a.name] = { count: parseInt(document.getElementById('count_'+a.name).value)||0, total: parseFloat(document.getElementById('total_'+a.name).value)||0 }; });
+        localStorage.setItem('qrYearlyStats', JSON.stringify(n));
+        alert("บันทึกยอดสะสมเรียบร้อย"); hideStatsForm(); renderHistory(); updateAccountStatsDisplay();
+    }
+    
+    function openSheetSettings() {
+        const url = localStorage.getItem('qrSheetUrl') || DEFAULT_SCRIPT_URL;
+        const active = localStorage.getItem('qrSheetActive') !== "false";
+        document.getElementById('sheetUrlInput').value = url;
+        document.getElementById('sheetActiveCheck').checked = active;
+        document.getElementById('sheetSettingsModal').style.display = 'flex';
+    }
+    function closeSheetSettings() { document.getElementById('sheetSettingsModal').style.display = 'none'; }
+    function saveSheetSettings() {
+        const url = document.getElementById('sheetUrlInput').value.trim();
+        const active = document.getElementById('sheetActiveCheck').checked;
+        localStorage.setItem('qrSheetUrl', url);
+        localStorage.setItem('qrSheetActive', active);
+        closeSheetSettings();
+        alert("บันทึกตั้งค่า Google Sheet แล้ว");
+    }
+
+    function openClearHistoryModal() { document.getElementById('clearHistoryModal').style.display='flex'; }
+    function confirmClearHistory() { localStorage.removeItem('qrHistory'); document.getElementById('clearHistoryModal').style.display='none'; renderHistory(); }
+    function openHistoryLimitModal() { document.getElementById('historyLimitInput').value = historyLimit; document.getElementById('historyLimitModal').style.display='flex'; }
+    function saveHistoryLimit() {
+        historyLimit = parseInt(document.getElementById('historyLimitInput').value) || 50;
+        localStorage.setItem('qrHistoryLimit', historyLimit);
+        // document.getElementById('currentLimitDisplay').innerText = `(${historyLimit})`; // Removed per Task 3 UI cleanup
+        document.getElementById('historyLimitModal').style.display='none';
+        renderHistory();
+    }
+
+    function saveTransaction() {
+        try {
+            if(checkLimits()) return;
+
+            const amtEl = document.getElementById('amount');
+            const ppEl = document.getElementById('ppID');
+            if(!amtEl.value || !ppEl.value) return alert("ข้อมูลไม่ครบ");
+            
+            const amt = parseFloat(amtEl.value);
+            const now = new Date();
+            const rec = {
+                id: Date.now(),
+                date: now.toLocaleDateString('th-TH'),
+                time: now.toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}),
+                name: currentNick || ppEl.value,
+                amount: amt.toFixed(2)
+            };
+            
+            let h = JSON.parse(localStorage.getItem('qrHistory')||"[]");
+            h.unshift(rec);
+            localStorage.setItem('qrHistory', JSON.stringify(h));
+            updateYearlyStats(rec.name, amt, 1);
+            
+            const sheetUrl = localStorage.getItem('qrSheetUrl');
+            const sheetActive = localStorage.getItem('qrSheetActive') !== "false";
+            if (sheetUrl && sheetActive && sheetUrl !== "") {
+                sendToSheet(rec, sheetUrl);
+            }
+            
+            renderHistory(); updateAccountStatsDisplay();
+            
+            amtEl.value = ''; document.getElementById('clearAmountBtn').style.display='none';
+            try{generate()}catch(e){}
+            
+            if(checkLimits(true)) {
+                 // Trigger switch if limit full after save
+            } else {
+                 try {
+                    if(isAutoSwitchEnabled) {
+                        const auto = accounts.filter(a=>a.isAutoSwitch);
+                        const curr = accounts.find(a=>a.name===currentNick);
+                        if(curr && auto.some(a=>a.id===curr.id)) {
+                            const next = auto[(auto.findIndex(a=>a.id===curr.id)+1)%auto.length];
+                            const r = document.querySelector(`input[data-id="${next.id}"]`);
+                            if(r){ r.checked=true; selectAccountObj(next.id); }
+                        }
+                    }
+                } catch(e){}
+            }
+
+            const btn = document.querySelector('.action-btn');
+            const old = btn.innerText; btn.innerText="บันทึกแล้ว!"; btn.style.background="#4CAF50";
+            setTimeout(()=>{ btn.innerText=old; btn.style.background=currentTheme.btn||'#011840'; }, 1500);
+
+        } catch(e) { alert("Error: "+e.message); }
+    }
+
+    function genSpecificText(accountName, items, targetDateStr) {
+         if (!items || items.length === 0) return "";
+         const y = JSON.parse(localStorage.getItem('qrYearlyStats')||"{}");
+         const yearStats = y[accountName] || {count:0, total:0};
+         
+         let total = 0; items.forEach(i => total += parseFloat(i.amount));
+         const count = items.length;
+
+         let parts = targetDateStr.split('/');
+         let dateObj = new Date(parts[2] - 543, parts[1] - 1, parts[0]);
+         let fullDate = getThaiDateFull(dateObj);
+
+         let txt = `${accountName} | ${fullDate}\n ${count} ครั้ง ยอด ${total.toLocaleString()} บาท\n`;
+         [...items].reverse().forEach(i => {
+             txt += `  - ${i.time} : ${parseFloat(i.amount).toLocaleString()} บ.\n`;
+         });
+         txt += `ยอดสะสมปีนี้\n- ${accountName}: ${yearStats.count} ครั้ง ${yearStats.total.toLocaleString()} บาท`;
+         return txt;
+    }
+
+    function genSumText() {
+         const h = JSON.parse(localStorage.getItem('qrHistory')||"[]");
+         const dIn = document.getElementById('dateFilter');
+         const tDate = dIn&&dIn.value ? new Date(dIn.value).toLocaleDateString('th-TH') : new Date().toLocaleDateString('th-TH');
+         
+         const items = h.filter(i=>i.date===tDate);
+         const activeAccounts = [...new Set(items.map(i => i.name))];
+         
+         let fullTxt = "";
+         activeAccounts.forEach(name => {
+             const accItems = items.filter(i => i.name === name);
+             fullTxt += genSpecificText(name, accItems, tDate) + "\n\n";
+         });
+         
+         if(activeAccounts.length === 0) fullTxt = `สรุปยอดวันที่ ${tDate}\nไม่มีรายการ`;
+         
+         return fullTxt.trim();
+    }
+    
+    function copyToClipboard() { navigator.clipboard.writeText(genSumText()).then(()=>{alert("คัดลอกแล้ว");closeExportModal();}); }
+    function sendToLine() { window.open("line://msg/text/"+encodeURIComponent(genSumText()), '_blank'); closeExportModal(); }
+    
+    function sendSpecificToLine(accountName) {
+         const h = JSON.parse(localStorage.getItem('qrHistory')||"[]");
+         const dIn = document.getElementById('dateFilter');
+         const tDate = dIn&&dIn.value ? new Date(dIn.value).toLocaleDateString('th-TH') : new Date().toLocaleDateString('th-TH');
+         const items = h.filter(i => i.date===tDate && i.name===accountName);
+         if (items.length === 0) return alert("ไม่มีรายการ");
+         
+         const txt = genSpecificText(accountName, items, tDate);
+         window.open("line://msg/text/"+encodeURIComponent(txt), '_blank');
+    }
+
+    function exportBackup() {
+        const d = { qrHistory: localStorage.getItem('qrHistory'), qrYearlyStats: localStorage.getItem('qrYearlyStats'), qrAccounts: localStorage.getItem('qrAccounts'), qrTheme: localStorage.getItem('qrTheme') };
+        const now = new Date();
+        const fName = `PromptPay_${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}.json`;
+        const blob = new Blob([JSON.stringify(d)], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a'); a.href = url; a.download = fName; document.body.appendChild(a); a.click(); a.remove();
+    }
+    function triggerImport() { document.getElementById('importFile').click(); }
+    function importBackup(input) {
+        const f = input.files[0]; if(!f) return;
+        const r = new FileReader();
+        r.onload = e => {
+            try {
+                const d = JSON.parse(e.target.result);
+                if(d.qrHistory) localStorage.setItem('qrHistory', d.qrHistory);
+                if(d.qrYearlyStats) localStorage.setItem('qrYearlyStats', d.qrYearlyStats);
+                if(d.qrAccounts) localStorage.setItem('qrAccounts', d.qrAccounts);
+                if(d.qrTheme) localStorage.setItem('qrTheme', d.qrTheme);
+                alert("Import สำเร็จ!"); location.reload();
+            } catch(e) { alert("ไฟล์ผิดพลาด"); }
+        };
+        r.readAsText(f);
+    }
+
+    function openQRModal() {
+        document.activeElement.blur();
+        const pp = document.getElementById('ppID').value;
+        const amt = parseFloat(document.getElementById('amount').value);
+        if(!pp) return alert("ใส่ PromptPay ID");
+        document.getElementById('modalRotatedName').innerText = document.getElementById('accountNameDisplay').innerText;
+        document.getElementById('modalAccountNameDisplay').innerText = document.getElementById('accountNameDisplay').innerText;
+        const txt = (amt && !isNaN(amt)) ? (amt%1===0?amt:amt.toFixed(2))+" บาท" : "";
+        document.getElementById('modalRotatedAmount').innerText = txt;
+        document.getElementById('modalAmountDisplay').innerText = txt;
+        const div = document.getElementById('modalQrcode'); div.innerHTML="";
+        if(typeof QRCode !== 'undefined') new QRCode(div, { text: generatePayload(pp, amt), width: 250, height: 250 });
+        applyTheme(currentTheme);
+        document.getElementById('qrModalPreview').style.display='flex';
+        speakPaymentInfo(amt, document.getElementById('accountNameDisplay').innerText);
+    }
+    function closeQRModal() { document.getElementById('qrModalPreview').style.display='none'; }
+    function saveFromModal() { saveTransaction(); closeQRModal(); }
+    
+    function speakPaymentInfo(amount, name) {
+        if (!window.speechSynthesis) return;
+        window.speechSynthesis.cancel();
+        let p = [];
+        if (currentTheme.ttsEnabled1) p.push(`${currentTheme.ttsText1||'ยอด'} ${(amount&&!isNaN(amount))?amount:"0"} บาท`);
+        if (currentTheme.ttsEnabled2) p.push(`${currentTheme.ttsText2||'บัญชี'} ${name.replace(/^บัญชี\s*/, '')}`);
+        if (currentTheme.ttsEnabled3) p.push(currentTheme.ttsText3||'');
+        if (p.length) { const u = new SpeechSynthesisUtterance(p.join(' ')); u.lang='th-TH'; window.speechSynthesis.speak(u); }
+    }
+    
+    function sendToSheet(data, url) {
+        const formData = new FormData();
+        formData.append('date', data.date);
+        formData.append('time', data.time);
+        formData.append('name', data.name);
+        formData.append('amount', data.amount);
+        formData.append('remark', "RecorderApp"); 
+
+        fetch(url, { 
+            method: 'POST', 
+            mode: 'no-cors', 
+            body: formData 
+        })
+        .then(() => console.log("Request sent to Sheet"))
+        .catch(e => console.error("Sheet Error:", e));
+    }
+</script>
+</body>
+</html>
